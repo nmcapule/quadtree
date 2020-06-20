@@ -7,12 +7,6 @@ import (
 	"testing"
 )
 
-var globalQt *Quadtree
-
-func init() {
-	globalQt = createQuadtree(1000000)
-}
-
 func createQuadtree(n int) *Quadtree {
 	qt := NewQuadtree(Bounds{0., 0., 100., 100.})
 
@@ -39,16 +33,20 @@ func benchmarkCreate(n int, b *testing.B) {
 
 func benchmarkFindAllWithin(qt *Quadtree, b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		x1 := rand.Float64() * 50
-		y1 := rand.Float64() * 50
-		x2 := x1 + rand.Float64()*50
-		y2 := y1 + rand.Float64()*50
-		qt.FindAllWithin(Bounds{x1, y1, x2, y2})
+		// x, y := 0., 0.
+		// w, h := 100., 100.
+		x := rand.Float64() * 90
+		y := rand.Float64() * 90
+		w := 10. //rand.Float64() * 5
+		h := 10. //rand.Float64() * 5
+		qt.FindAllWithin(Bounds{x, y, w, h})
 	}
 }
 
 func BenchmarkQuadtreeFind(b *testing.B) {
-	benchmarkFindAllWithin(globalQt, b)
+	qt := createQuadtree(10000)
+	b.ResetTimer()
+	benchmarkFindAllWithin(qt, b)
 }
 
 func BenchmarkQuadtreeCreate1000(b *testing.B) {

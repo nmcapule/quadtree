@@ -106,6 +106,7 @@ func (qt *Quadtree) FindAllWithin(bounds Bounds) []*Object {
 		}
 		res = append(res, node.FindAllWithin(bounds)...)
 	}
+
 	return res
 }
 
