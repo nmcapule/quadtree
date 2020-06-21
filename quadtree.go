@@ -3,6 +3,8 @@ package quadtree
 import (
 	"errors"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -39,19 +41,33 @@ func (b *Bounds) Intersects(other Bounds) bool {
 
 // Quadtree is a naive implementation of a quadtree.
 type Quadtree struct {
+	UUID       uuid.UUID
 	Bounds     Bounds
 	Nodes      []*Quadtree
 	Objects    []*Object
 	Level      int
 	MaxObjects int
+	MaxLevel   int
 	Total      int
 }
 
 // NewQuadtree instantiates a new quadtree from a given bounds.
 func NewQuadtree(bounds Bounds) *Quadtree {
 	return &Quadtree{
+		UUID:       uuid.New(),
 		Bounds:     bounds,
 		MaxObjects: 5,
+		MaxLevel:   4,
+	}
+}
+
+func (qt *Quadtree) childTemplate(bounds Bounds) *Quadtree {
+	return &Quadtree{
+		UUID:       uuid.New(),
+		Bounds:     bounds,
+		Level:      qt.Level + 1,
+		MaxObjects: qt.MaxObjects,
+		MaxLevel:   qt.MaxLevel,
 	}
 }
 
@@ -63,7 +79,7 @@ func (qt *Quadtree) Insert(object *Object) error {
 	}
 	// If there's no children yet, try to insert simple.
 	if len(qt.Nodes) == 0 {
-		if len(qt.Objects) < qt.MaxObjects {
+		if len(qt.Objects) < qt.MaxObjects || qt.Level >= qt.MaxLevel {
 			qt.Objects = append(qt.Objects, object)
 			qt.Total++
 			return nil
@@ -178,26 +194,10 @@ func (qt *Quadtree) subdivide() error {
 	hw, hh := qt.Bounds.Width/2, qt.Bounds.Height/2
 
 	// Nodes index by quadrant: NW, NE, SE, SW
-	qt.Nodes[0] = &Quadtree{
-		Bounds:     Bounds{X: bx, Y: by, Width: hw, Height: hh},
-		Level:      qt.Level + 1,
-		MaxObjects: qt.MaxObjects,
-	}
-	qt.Nodes[1] = &Quadtree{
-		Bounds:     Bounds{X: bx + hw, Y: by, Width: hw, Height: hh},
-		Level:      qt.Level + 1,
-		MaxObjects: qt.MaxObjects,
-	}
-	qt.Nodes[2] = &Quadtree{
-		Bounds:     Bounds{X: bx + hw, Y: by + hh, Width: hw, Height: hh},
-		Level:      qt.Level + 1,
-		MaxObjects: qt.MaxObjects,
-	}
-	qt.Nodes[3] = &Quadtree{
-		Bounds:     Bounds{X: bx, Y: by + hh, Width: hw, Height: hh},
-		Level:      qt.Level + 1,
-		MaxObjects: qt.MaxObjects,
-	}
+	qt.Nodes[0] = qt.childTemplate(Bounds{X: bx, Y: by, Width: hw, Height: hh})
+	qt.Nodes[1] = qt.childTemplate(Bounds{X: bx + hw, Y: by, Width: hw, Height: hh})
+	qt.Nodes[2] = qt.childTemplate(Bounds{X: bx + hw, Y: by + hh, Width: hw, Height: hh})
+	qt.Nodes[3] = qt.childTemplate(Bounds{X: bx, Y: by + hh, Width: hw, Height: hh})
 
 	objects := qt.Objects
 	qt.Objects = nil

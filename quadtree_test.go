@@ -29,16 +29,17 @@ func benchmarkFindAllWithin(qt *Quadtree, b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		// x, y := 0., 0.
 		// w, h := 100., 100.
-		x := rand.Float64() * 99
-		y := rand.Float64() * 99
-		w := 1. //rand.Float64() * 5
-		h := 1. //rand.Float64() * 5
+		x := qt.Bounds.X + rand.Float64()*qt.Bounds.Width
+		y := qt.Bounds.Y + rand.Float64()*qt.Bounds.Height
+		w := 1 * qt.Bounds.Width / 100
+		h := 1 * qt.Bounds.Height / 100
 		qt.FindAllWithin(Bounds{x, y, w, h})
 	}
 }
 
 func BenchmarkQuadtreeFind(b *testing.B) {
-	qt := createQuadtree(10000, Bounds{0, 0, 100, 100})
+	qt := createQuadtree(1000, Bounds{0, 0, 4096, 4096})
+	qt.MaxLevel = 5
 	b.ResetTimer()
 	benchmarkFindAllWithin(qt, b)
 }
@@ -62,7 +63,7 @@ func benchmarkMove(qt *Quadtree, objects []*Object, bounds Bounds, b *testing.B)
 }
 
 func BenchmarkQuadtreeMove(b *testing.B) {
-	bounds := Bounds{0, 0, 100, 100}
+	bounds := Bounds{0, 0, 4096, 4096}
 	qt := createQuadtree(1000000, bounds)
 	objects := qt.FindAllWithin(bounds)
 	b.ResetTimer()
